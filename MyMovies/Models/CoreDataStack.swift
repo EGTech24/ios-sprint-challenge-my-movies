@@ -10,9 +10,9 @@ import Foundation
 import CoreData
 
 class CoreDataStack {
+    //MARK: - Variables
     static let shared = CoreDataStack()
     private init() {}
-    
     lazy var container: NSPersistentContainer = {
         let container = NSPersistentContainer(name: "MyMovies")
         container.loadPersistentStores { (_, error) in
@@ -23,14 +23,13 @@ class CoreDataStack {
         container.viewContext.automaticallyMergesChangesFromParent = true
         return container
     }()
-    
     var mainContext: NSManagedObjectContext {
         return container.viewContext
     }
     
+    //MARK: - Function
     func save(context: NSManagedObjectContext = CoreDataStack.shared.mainContext) throws {
         var error: Error?
-        
         context.performAndWait {
             do {
                 try context.save()
@@ -38,7 +37,6 @@ class CoreDataStack {
                 error = saveError
             }
         }
-        
         if let error = error { throw error }
     }
 }

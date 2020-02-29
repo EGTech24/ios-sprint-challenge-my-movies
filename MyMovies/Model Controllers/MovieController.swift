@@ -9,38 +9,31 @@
 import Foundation
 import CoreData
 
+enum HTTPMethod: String {
+    case get = "GET"
+    case put = "PUT"
+    case post = "POST"
+    case delete = "DELETE"
+}
 class MovieController {
     
-    enum HTTPMethod: String {
-        case get = "GET"
-        case put = "PUT"
-        case post = "POST"
-        case delete = "DELETE"
-    }
+    // MARK: - Variables
+    private let apiKey = "4cc920dab8b729a619647ccc4d191d5e"
+    private let baseURL = URL(string: "https://api.themoviedb.org/3/search/movie")!
+    private let serverBaseURL = URL(string: "https://movies-6bc57.firebaseio.com/")!
+    var searchedMovies: [MovieRepresentation] = []
+    
     
     typealias CompletionHandler = (Error?) -> Void
-    
     init() {
         fetchMoviesFromServer()
     }
     
-    // MARK: - Properties
-
-    private let apiKey = "4cc920dab8b729a619647ccc4d191d5e"
-    private let baseURL = URL(string: "https://api.themoviedb.org/3/search/movie")!
-    private let serverBaseURL = URL(string: "https://movies-6bc57.firebaseio.com/")!
-        
-    var searchedMovies: [MovieRepresentation] = []
-    
     // MARK: - Public Search Method
     
     func searchForMovie(with searchTerm: String, completion: @escaping (Error?) -> Void) {
-        
         var components = URLComponents(url: baseURL, resolvingAgainstBaseURL: true)
-        
-        let queryParameters = ["query": searchTerm,
-                               "api_key": apiKey]
-        
+        let queryParameters = ["query": searchTerm, "api_key": apiKey]
         components?.queryItems = queryParameters.map({URLQueryItem(name: $0.key, value: $0.value)})
         
         guard let requestURL = components?.url else {
@@ -49,7 +42,6 @@ class MovieController {
         }
         
         URLSession.shared.dataTask(with: requestURL) { (data, _, error) in
-            
             if let error = error {
                 NSLog("Error searching for movie with search term \(searchTerm): \(error)")
                 completion(error)
@@ -73,12 +65,12 @@ class MovieController {
         }.resume()
     }
     
-    // MARK: - Public CRUD Methods
+    // MARK: - CRUD Methods
     
-    // Create Movie
+    // Create
     func createMovie(title: String, hasWatched: Bool, identifier: UUID) {
         let movie = Movie(title: title, identifier: identifier, hasWatched: hasWatched)
-        putMovieToServer(movie)
+        put(movie)
     }
 
     func createMovie(from movieRepresentation: MovieRepresentation) {
@@ -88,13 +80,13 @@ class MovieController {
         createMovie(title: title, hasWatched: hasWatched, identifier: identifier)
     }
     
-    // Update Movie
+    // Update
     func toggleHasWatched(for movie: Movie) {
         movie.hasWatched.toggle()
-        putMovieToServer(movie)
+        put(movie)
     }
     
-    // Delete Movie
+    // Delete
     func deleteMovie(_ movie: Movie) {
         deleteMovieFromServer(movie) { (error) in
             guard error == nil else {
@@ -116,9 +108,8 @@ class MovieController {
         }
     }
 
-    // MARK: - Public Server API Methods
+    // MARK: - API Methods
 
-    // FETCH movies from server
     func fetchMoviesFromServer(completion: @escaping CompletionHandler = { _ in  }) {
         let requestURL = serverBaseURL.appendingPathExtension("json")
         
@@ -155,10 +146,9 @@ class MovieController {
     }
     
     
-    // PUT movie to server
-    private func putMovieToServer(_ movie: Movie, completion: @escaping CompletionHandler = { _ in }) {
+    // PUT Method
+    private func put(_ movie: Movie, completion: @escaping CompletionHandler = { _ in }) {
         guard let moc = movie.managedObjectContext else { return }
-        
         var uuidString = ""
         
         moc.performAndWait {
@@ -247,15 +237,12 @@ class MovieController {
         
         context.perform {
             do {
-                // Delete existing movies not found in server database
                 let allExistingMovies = try context.fetch(Movie.fetchRequest()) as? [Movie]
                 let moviesToDelete = allExistingMovies!.filter { !identifiersToFetch.contains($0.identifier!) }
                 
                 for movie in moviesToDelete {
                     context.delete(movie)
                 }
-                
-                // Update existing movies found in server database
                 let existingMovies = try context.fetch(fetchRequest)
                 
                 for movie in existingMovies {
@@ -265,8 +252,6 @@ class MovieController {
                     self.update(movie: movie, with: representation)
                     moviesToCreate.removeValue(forKey: id)
                 }
-                
-                // Create new movies found in server database
                 for representation in moviesToCreate.values {
                     Movie(movieRepresentation: representation, context: context)
                 }
@@ -275,6 +260,7 @@ class MovieController {
             }
         }
         
+        // Save all this in CoreData
         try CoreDataStack.shared.save(context: context)
     }
     
