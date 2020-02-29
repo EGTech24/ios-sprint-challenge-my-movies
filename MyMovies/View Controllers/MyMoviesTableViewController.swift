@@ -69,14 +69,6 @@ class MyMoviesTableViewController: UITableViewController {
             movieController.deleteMovie(movie)
         }
     }
-    
-//    override func tableView(_ tableView: UITableView, heightForRowAt indexPath: IndexPath) -> CGFloat {
-//        if let cell = tableView.cellForRow(at: indexPath) as? MyMoviesTableViewCell {
-//            let titleLabelHeight = cell.titleLabel.bounds.height
-//            return titleLabelHeight + 8
-//        }
-//        return 44
-//    }
 }
 
 // MARK: - MyMoviesTableViewCell Delegate
