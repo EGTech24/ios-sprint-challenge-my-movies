@@ -54,9 +54,7 @@ class MyMoviesTableViewController: UITableViewController {
     
     override func tableView(_ tableView: UITableView, titleForHeaderInSection section: Int) -> String? {
         let sectionInfo = fetchedResultsController.sections?[section]
-        
-        if let sectionInfo = sectionInfo,
-            let sectionNameIndex = Int(sectionInfo.name) {
+        if let sectionInfo = sectionInfo, let sectionNameIndex = Int(sectionInfo.name) {
             return SectionName.allCases[sectionNameIndex].rawValue
         } else {
             return sectionInfo?.name
